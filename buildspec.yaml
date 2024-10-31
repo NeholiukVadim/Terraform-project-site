@@ -2,14 +2,17 @@ version: 0.2
 
 env:
   secrets-manager:
-    AWS_ACCOUNT_ID: "github-secrets:AWS_ACCOUNT_ID"
-    AWS_DEFAULT_REGION: "github-secrets:AWS_DEFAULT_REGION"
-    IMAGE_REPO_NAME: "github-secrets:IMAGE_REPO_NAME"
-    IMAGE_TAG: "github-secrets:IMAGE_TAG"
+    BUILD_SECRETS: "github-secrets:BUILDSECRETS"
 
 phases:
   pre_build:
     commands:
+      # Parse the secrets
+      - export AWS_ACCOUNT_ID=$(echo $BUILD_SECRETS | jq -r '.AWS_ACCOUNT_ID')
+      - export AWS_DEFAULT_REGION=$(echo $BUILD_SECRETS | jq -r '.AWS_DEFAULT_REGION')
+      - export IMAGE_REPO_NAME=$(echo $BUILD_SECRETS | jq -r '.IMAGE_REPO_NAME')
+      - export IMAGE_TAG=$(echo $BUILD_SECRETS | jq -r '.IMAGE_TAG')
+      # ECR login
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
